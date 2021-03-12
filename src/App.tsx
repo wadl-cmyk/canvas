@@ -6,26 +6,25 @@ import { useWallet, UseWalletProvider } from 'use-wallet';
 
 
 const abijson = require('./abi.json')
-const abi = abijson;
 
 const web3 = new Web3(Web3.givenProvider);
 
 const contractAddr = '0x991927E02445E03D89FA2FF30A7433778a0B1D48';
-const SimpleContract = new web3.eth.Contract(abi, contractAddr);
+const SimpleContract = new web3.eth.Contract(abijson, contractAddr);
 // const account = accounts[0]
 var firstAccount: any;
 
-
-var currentaddress = '1';
+declare global {
+  interface Window {
+    ethereum: any
+    web3: any
+  }
+}
 
 export const Wallet = () => {
   const wallet = useWallet()
   const blockNumber = wallet.getBlockNumber()
-  
-  function getAccount() {
-    currentaddress = wallet.account
-    console.log('updated')
-  }
+
   
   return (
     <>
@@ -38,7 +37,7 @@ export const Wallet = () => {
           <div>Account: {wallet.account}</div>
           <div>Balance: {wallet.balance}</div>
           <div>Status: {wallet.status}</div>
-          <button onClick={() => getAccount()}>update acc</button>
+          
           <button onClick={() => wallet.reset()}>disconnect</button>
           
         </div>
@@ -91,12 +90,31 @@ const App: React.FC = () => {
   const handleGet = async (e:any) => {
     
     e.preventDefault();
-    const result = await SimpleContract.methods.tokensOfOwner(currentaddress).call();
+    const accounts = await window.ethereum.enable();
+    const account = accounts[0];
+    const result = await SimpleContract.methods.tokensOfOwner(account).call();
     setGetNumber(result);
     tokenlist = result
     console.log(result);
-    console.log(currentaddress);
     no_tokens = result.length;
+  }
+  
+  const handleSet = async (e:any) => {
+    e.preventDefault();    
+    const accounts = await window.ethereum.enable();
+    const account = accounts[0];
+    console.log(account);
+    // const gas = await SimpleContract.methods.pauseDrop().estimateGas({gas: 5000000}, function(error: any, gasAmount: any){
+      // if(gasAmount == 5000000)
+        // console.log('Method ran out of gas');
+    // });
+    // console.log(gas);
+    const result = await SimpleContract.methods.adoptPixel([69]).send({
+      value: 10000000000000000,
+      from: account,
+      gas: 250000
+    })
+    
   }
 
   const [running, setRunning] = useState(false);
@@ -214,6 +232,11 @@ const App: React.FC = () => {
           type="button" > 
           Get Number 
         </button>
+        <button
+          onClick={handleSet}
+          type="button" > 
+          Mint token 
+        </button>
       </UseWalletProvider>
       
       
@@ -222,9 +245,5 @@ const App: React.FC = () => {
     </>
   );
 };
-
-      // <Web3ReactProvider getLibrary={getLibrary}>
-        // <Wallet />
-      // </Web3ReactProvider>
 
 export default App;
