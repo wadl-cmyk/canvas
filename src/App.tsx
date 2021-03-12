@@ -1,19 +1,11 @@
 import React, { useState, useCallback, useRef } from "react";
 import produce from "immer";
 import Web3 from 'web3';
-// import { Web3ReactProvider } from '@web3-react/core'
-// import { Web3Provider } from '@ethersproject/providers'
-// import { useWeb3React } from '@web3-react/core'
-// import { InjectedConnector } from '@web3-react/injected-connector'
+
 import { useWallet, UseWalletProvider } from 'use-wallet';
-//import { nftabi } from './abi';
-// import fs from 'fs';
-// const nftabi = require('./abi');
 
-// const nftabi = fs.readFileSync('./abi.json');
-// const nftjson = JSON.parse(nftabi.toString());
 
-const abijson = require('./abijson.json')
+const abijson = require('./abi.json')
 const abi = abijson;
 
 const web3 = new Web3(Web3.givenProvider);
@@ -22,56 +14,6 @@ const contractAddr = '0x991927E02445E03D89FA2FF30A7433778a0B1D48';
 const SimpleContract = new web3.eth.Contract(abi, contractAddr);
 // const account = accounts[0]
 var firstAccount: any;
-
-
-// function getAccount() {
-    // const accounts: any = web3.eth.getAccounts().then(e => { firstAccount = e[0] })
-// }
-// getAccount()
-
-// getAccounts(function(result) {
-    // console.log(result[0]);
-// });
-
-
-// export const injectedConnector = new InjectedConnector({
-  // supportedChainIds: [
-    // 1, // Mainet
-    // 3, // Ropsten
-    // 4, // Rinkeby
-    // 5, // Goerli
-    // 42, // Kovan
-  // ],
-// })
-
-// function getLibrary(provider: any): Web3Provider {
-  // const library = new Web3Provider(provider)
-  // library.pollingInterval = 12000
-  // return library
-// }
-
-// export const Wallet = () => {
-  // const { chainId, account, activate, active } = useWeb3React<Web3Provider>()
-
-  // const onClick = () => {
-    // activate(injectedConnector)
-  // }
-
-  // return (
-    // <div>
-      // <div>ChainId: {chainId}</div>
-      // <div>Account: {account}</div>
-      // {active ? (
-        // <div>✅ </div>
-      // ) : (
-        // <button type="button" onClick={onClick}>
-          // Connect
-        // </button>
-      // )}
-    // </div>
-  // )
-// }
-
 
 
 var currentaddress = '1';
