@@ -103,24 +103,49 @@ const App: React.FC = () => {
     e.preventDefault();    
     const accounts = await window.ethereum.enable();
     const account = accounts[0];
-    console.log(account);
+    // console.log(account);
     // const gas = await SimpleContract.methods.pauseDrop().estimateGas({gas: 5000000}, function(error: any, gasAmount: any){
       // if(gasAmount == 5000000)
         // console.log('Method ran out of gas');
     // });
     // console.log(gas);
-    const result = await SimpleContract.methods.adoptPixel([69]).send({
-      value: 10000000000000000,
+    const result = await SimpleContract.methods.adoptPixel(newselection).send({
+      value: 10000000000000000*newselection.length,
       from: account,
-      gas: 250000
+      gas: 250000*newselection.length
     })
     
   }
-
+  
+  // const indexOfAll = (arr:any, val:any) => arr.reduce((acc:any, el:any, i:any) => (el === val ? [...acc, i] : acc), []);
+  
+  // console.log(indexOfAll(grid, 1));
+  
+  function findInArr(arr:any, elm:any) {
+    var occ = [];
+    for(var i = 0; i < arr.length; i++)
+        for(var j = 0; j < arr[i].length; j++)
+            if(arr[i][j] == elm)
+                occ.push(j+i*50);
+    return occ;
+  }
+  
+  var selection = findInArr(grid, 1)
+  var tokenlistint = tokenlist.map(Number);
+  console.log(selection)
+  console.log(tokenlistint)
+  // const word:string = "2"
+  const newselection = selection.filter(val => !tokenlistint.includes(val));
+  console.log(newselection)
+  
+  
+  
   const [running, setRunning] = useState(false);
 
   const runningRef = useRef(running);
   runningRef.current = running;
+  
+  // console.log(grid);
 
   const runSimulation = useCallback(() => {
     if (!runningRef.current) {
@@ -227,17 +252,19 @@ const App: React.FC = () => {
         }}
       >
         <Wallet />
-        <button
-          onClick={handleGet}
-          type="button" > 
-          Get Number 
-        </button>
-        <button
-          onClick={handleSet}
-          type="button" > 
-          Mint token 
-        </button>
+        
       </UseWalletProvider>
+      <button
+        onClick={handleGet}
+        type="button" > 
+        Get owned pixels
+      </button>
+      
+      <button
+        onClick={handleSet}
+        type="button" > 
+        Purchase pixels 
+      </button>
       
       
       { JSON.stringify(getNumber) }
