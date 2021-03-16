@@ -20,6 +20,24 @@ declare global {
     web3: any
   }
 }
+// const initialize = async (e:any) => {
+    
+  // minted.length = 0
+  // e.preventDefault();
+  // const accounts = await window.ethereum.enable();
+  // const account = accounts[0];
+  // const result = await SimpleContract.methods.totalSupply().call();
+  
+  // for (let i = 0; i < result; i++) {
+    // const mint = await SimpleContract.methods.tokenByIndex(i).call();
+    // minted.push(mint);
+  // }
+  // // setGetSupply(minted);
+  // minted = minted.map(Number);
+  // console.log('initialized');
+// }
+
+
 
 export const Wallet = () => {
   const wallet = useWallet()
@@ -31,9 +49,10 @@ export const Wallet = () => {
       <h1>Wallet</h1>
       {wallet.status === 'connected' ? (
         
-        
+     
         <div>
           
+        
           <div>Account: {wallet.account}</div>
           <div>Balance: {wallet.balance}</div>
           <div>Status: {wallet.status}</div>
@@ -69,6 +88,8 @@ const operations = [
   [-1, 0]
 ];
 
+var minted:number[] = [];
+
 const generateEmptyGrid = () => {
   const rows = [];
   for (let i = 0; i < numRows; i++) {
@@ -86,6 +107,44 @@ const App: React.FC = () => {
   });
   
   const [getNumber, setGetNumber] = useState([]);
+  
+  const [getSupply, setGetSupply] = useState([]);
+  
+  const [getMinted, setGetMinted] = useState<number[]>([]);
+  
+  const updateNftGrid = (i:number, k:number) => {
+    const newGrid = produce(grid, gridCopy => {
+      gridCopy[i][k] = grid[i][k] ? 0 : 1;
+      for (let n = 0; n < minted.length; n++) {
+        const row_no = Math.floor(minted[n]/50);
+        const col_no = minted[n] - row_no*50
+        gridCopy[row_no][col_no] = 1
+      }                  
+    });
+    
+    setGrid(newGrid);
+  }
+  
+  
+  
+  const handleSupply = async (e:any) => {
+    
+    minted.length = 0
+    e.preventDefault();
+    const accounts = await window.ethereum.enable();
+    const account = accounts[0];
+    const result = await SimpleContract.methods.totalSupply().call();
+    
+    for (let i = 0; i < result; i++) {
+      const mint = await SimpleContract.methods.tokenByIndex(i).call();
+      minted.push(mint);
+    }
+    // setGetSupply(minted);
+    setGetMinted(minted);
+    // minted = minted.map(Number);
+    
+    console.log(minted);
+  }
   
   const handleGet = async (e:any) => {
     
@@ -114,7 +173,18 @@ const App: React.FC = () => {
       from: account,
       gas: 250000*newselection.length
     })
+  }
+  
+  const getOwnedPixels = async (e:any) => {
     
+    e.preventDefault();
+    const accounts = await window.ethereum.enable();
+    const account = accounts[0];
+    const result = await SimpleContract.methods.tokensOfOwner(account).call();
+    setGetNumber(result);
+    tokenlist = result
+    console.log(result);
+    no_tokens = result.length;
   }
   
   // const indexOfAll = (arr:any, val:any) => arr.reduce((acc:any, el:any, i:any) => (el === val ? [...acc, i] : acc), []);
@@ -131,7 +201,7 @@ const App: React.FC = () => {
   }
   
   var selection = findInArr(grid, 1)
-  var tokenlistint = tokenlist.map(Number);
+  var tokenlistint = getMinted.map(Number);
   console.log(selection)
   console.log(tokenlistint)
   // const word:string = "2"
@@ -222,18 +292,7 @@ const App: React.FC = () => {
           rows.map((col, k) => (
             <div
               key={`${i}-${k}`}
-              onClick={() => {
-                const newGrid = produce(grid, gridCopy => {
-                  gridCopy[i][k] = grid[i][k] ? 0 : 1;
-                  for (let n = 0; n < no_tokens; n++) {
-                    const row_no = Math.floor(tokenlist[n]/50);
-                    const col_no = tokenlist[n] - row_no*50
-                    gridCopy[row_no][col_no] = 1
-                  }                  
-                });
-                
-                setGrid(newGrid);
-              }}
+              onClick={() => {updateNftGrid(i, k)}}
               style={{
                 width: 20,
                 height: 20,
@@ -260,14 +319,23 @@ const App: React.FC = () => {
         Get owned pixels
       </button>
       
+      { JSON.stringify(getNumber) }
+      
       <button
         onClick={handleSet}
         type="button" > 
         Purchase pixels 
       </button>
       
+      <button
+        onClick={handleSupply}
+        type="button" > 
+        Get supply 
+      </button>
       
-      { JSON.stringify(getNumber) }
+      { JSON.stringify(getMinted) }
+      
+
 
     </>
   );
