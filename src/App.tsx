@@ -1,9 +1,11 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import produce from "immer";
 import Web3 from 'web3';
-
+import { PixelEditor, Rectangle } from '@curtishughes/pixel-editor';
+import axios from "axios";
 import { useWallet, UseWalletProvider } from 'use-wallet';
 
+const instance = axios.create();
 
 const abijson = require('./abi.json')
 
@@ -20,6 +22,8 @@ declare global {
     web3: any
   }
 }
+
+
 // const initialize = async (e:any) => {
     
   // minted.length = 0
@@ -49,10 +53,8 @@ export const Wallet = () => {
       <h1>Wallet</h1>
       {wallet.status === 'connected' ? (
         
-     
+
         <div>
-          
-        
           <div>Account: {wallet.account}</div>
           <div>Balance: {wallet.balance}</div>
           <div>Status: {wallet.status}</div>
@@ -101,6 +103,14 @@ const generateEmptyGrid = () => {
 
 const App: React.FC = () => {
   
+  const editorRef = useRef<HTMLCanvasElement>(null);
+  const [editor, setEditor] = useState<PixelEditor>();
+
+  useEffect(() => {
+    if (editorRef.current) {
+      setEditor(new PixelEditor(editorRef.current, 10, 10, new Rectangle('black')));
+    }
+  }, []);
   
   const [grid, setGrid] = useState(() => {
     return generateEmptyGrid();
@@ -116,8 +126,8 @@ const App: React.FC = () => {
     const newGrid = produce(grid, gridCopy => {
       gridCopy[i][k] = grid[i][k] ? 0 : 1;
       for (let n = 0; n < minted.length; n++) {
-        const row_no = Math.floor(minted[n]/50);
-        const col_no = minted[n] - row_no*50
+        const row_no = Math.floor(minted[n]/numRows);
+        const col_no = minted[n] - row_no*numRows
         gridCopy[row_no][col_no] = 1
       }                  
     });
@@ -127,8 +137,8 @@ const App: React.FC = () => {
   
   
   
-  const handleSupply = async (e:any) => {
-    
+  const getNftSupply = async (e:any) => {
+    setLoadingMsg('Loading...')
     minted.length = 0
     e.preventDefault();
     const accounts = await window.ethereum.enable();
@@ -142,30 +152,37 @@ const App: React.FC = () => {
     // setGetSupply(minted);
     setGetMinted(minted);
     // minted = minted.map(Number);
-    
+    setLoadingMsg('Total NFT supply:');
     console.log(minted);
   }
   
-  const handleGet = async (e:any) => {
+  // const getNftSupply = async (e:any) => {
     
+  //   e.preventDefault();
+  //   const accounts = await window.ethereum.enable();
+  //   const account = accounts[0];
+  //   const result = await SimpleContract.methods.tokensOfOwner(account).call();
+  //   setGetNumber(result);
+  //   tokenlist = result
+  //   console.log(result);
+  //   no_tokens = result.length;
+  // }
+  
+  const axiosReq = async (e:any) => {
     e.preventDefault();
-    const accounts = await window.ethereum.enable();
-    const account = accounts[0];
-    const result = await SimpleContract.methods.tokensOfOwner(account).call();
-    setGetNumber(result);
-    tokenlist = result
-    console.log(result);
-    no_tokens = result.length;
+    instance.get("http://localhost:3003/api/read")
+      .then((response)=>{console.log(response.data)});
   }
   
-  const handleSet = async (e:any) => {
+  const purchaseNft = async (e:any) => {
+    
     e.preventDefault();    
     const accounts = await window.ethereum.enable();
     const account = accounts[0];
-    // console.log(account);
+    console.log(account);
     // const gas = await SimpleContract.methods.pauseDrop().estimateGas({gas: 5000000}, function(error: any, gasAmount: any){
-      // if(gasAmount == 5000000)
-        // console.log('Method ran out of gas');
+    //   if(gasAmount == 5000000)
+    //     console.log('Method ran out of gas');
     // });
     // console.log(gas);
     const result = await SimpleContract.methods.adoptPixel(newselection).send({
@@ -175,9 +192,10 @@ const App: React.FC = () => {
     })
   }
   
-  const getOwnedPixels = async (e:any) => {
+  const getNftUser = async (e:any) => {
     
     e.preventDefault();
+    // setGetNumber('');
     const accounts = await window.ethereum.enable();
     const account = accounts[0];
     const result = await SimpleContract.methods.tokensOfOwner(account).call();
@@ -209,72 +227,15 @@ const App: React.FC = () => {
   console.log(newselection)
   
   
-  
+  const [loadingMsg, setLoadingMsg] = useState<string>();
   const [running, setRunning] = useState(false);
 
   const runningRef = useRef(running);
   runningRef.current = running;
   
-  // console.log(grid);
-
-  const runSimulation = useCallback(() => {
-    if (!runningRef.current) {
-      return;
-    }
-
-    setGrid(g => {
-      return produce(g, gridCopy => {
-        for (let i = 0; i < numRows; i++) {
-          for (let k = 0; k < numCols; k++) {
-            let neighbors = 0;
-            operations.forEach(([x, y]) => {
-              const newI = i + x;
-              const newK = k + y;
-              if (newI >= 0 && newI < numRows && newK >= 0 && newK < numCols) {
-                neighbors += g[newI][newK];
-              }
-            });
-
-            if (neighbors < 2 || neighbors > 3) {
-              gridCopy[i][k] = 0;
-            } else if (g[i][k] === 0 && neighbors === 3) {
-              gridCopy[i][k] = 1;
-            }
-          }
-        }
-      });
-    });
-
-    setTimeout(runSimulation, 100);
-  }, []);
 
   return (
     <>
-      <button
-        onClick={() => {
-          setRunning(!running);
-          if (!running) {
-            runningRef.current = true;
-            runSimulation();
-          }
-        }}
-      >
-        {running ? "stop" : "start"}
-      </button>
-      <button
-        onClick={() => {
-          const rows = [];
-          for (let i = 0; i < numRows; i++) {
-            rows.push(
-              Array.from(Array(numCols), () => (Math.random() > 0.7 ? 1 : 0))
-            );
-          }
-
-          setGrid(rows);
-        }}
-      >
-        random
-      </button>
       <button
         onClick={() => {
           setGrid(generateEmptyGrid());
@@ -314,7 +275,7 @@ const App: React.FC = () => {
         
       </UseWalletProvider>
       <button
-        onClick={handleGet}
+        onClick={getNftUser}
         type="button" > 
         Get owned pixels
       </button>
@@ -322,21 +283,21 @@ const App: React.FC = () => {
       { JSON.stringify(getNumber) }
       
       <button
-        onClick={handleSet}
+        onClick={purchaseNft}
         type="button" > 
         Purchase pixels 
       </button>
       
       <button
-        onClick={handleSupply}
+        onClick={getNftSupply}
         type="button" > 
         Get supply 
       </button>
-      
+      { JSON.stringify(loadingMsg) }
       { JSON.stringify(getMinted) }
       
-
-
+      <>
+      </>
     </>
   );
 };
